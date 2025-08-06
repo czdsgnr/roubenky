@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useState } from 'react';
 import HomePage from './components/pages/HomePage';
 import AboutPage from './components/pages/AboutPage';
@@ -7,6 +8,7 @@ import CenikPage from './components/pages/CenikPage';
 import RecenzePage from './components/pages/RecenzePage';
 import KontaktPage from './components/pages/KontaktPage';
 import BookingPage from './components/pages/BookingPage';
+import AdminApp from './components/AdminApp';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -34,6 +36,8 @@ const App = () => {
         return <KontaktPage navigate={navigate} />;
       case 'booking':
         return <BookingPage navigate={navigate} />;
+      case 'admin':
+        return <AdminApp />;
       default:
         return <HomePage navigate={navigate} />;
     }

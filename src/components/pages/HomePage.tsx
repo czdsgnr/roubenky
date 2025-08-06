@@ -470,6 +470,12 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
               >
                 Storno podmínky
               </a>
+              <button 
+  onClick={() => navigate('admin')}
+  className="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg"
+>
+  Admin
+</button>
             </div>
           </div>
         </div>

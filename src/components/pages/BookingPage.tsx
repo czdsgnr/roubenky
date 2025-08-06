@@ -10,6 +10,10 @@ import { Alert, AlertDescription } from '../ui/alert';
 import Header from '../shared/Header';
 import AvailabilityCalendar from './AvailabilityCalendar';
 
+// Firebase imports
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { db } from '../firebase/firebase.config';
+
 interface BookingPageProps {
   navigate: (page: string) => void;
 }
@@ -18,6 +22,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
   const [step, setStep] = useState(1);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingData, setBookingData] = useState({
     checkIn: '',
     checkOut: '',
@@ -68,14 +73,58 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!termsAccepted) {
       setShowTermsModal(true);
       return;
     }
     
-    alert('Rezervace byla úspěšně odeslána! Brzy vás budeme kontaktovat pro potvrzení a platební informace.');
-    navigate('home');
+    try {
+      setIsSubmitting(true);
+      
+      // Připravíme data pro Firebase
+      const reservationData = {
+        // Osobní údaje
+        firstName: bookingData.firstName,
+        lastName: bookingData.lastName,
+        name: `${bookingData.firstName} ${bookingData.lastName}`,
+        email: bookingData.email,
+        phone: bookingData.phone,
+        company: bookingData.company || '',
+        
+        // Údaje o pobytu
+        checkin: bookingData.checkIn,
+        checkout: bookingData.checkOut,
+        guests: parseInt(bookingData.guests),
+        totalPrice: totalPrice,
+        nights: nights,
+        
+        // Zpráva a další
+        message: bookingData.message || '',
+        
+        // Systémové údaje
+        status: 'pending', // čeká na potvrzení
+        created: Timestamp.now(),
+        source: 'website' // odkud rezervace přišla
+      };
+      
+      // Uložíme do Firebase Firestore
+      const docRef = await addDoc(collection(db, 'reservations'), reservationData);
+      
+      console.log('Rezervace uložena s ID:', docRef.id);
+      
+      // Zobrazíme úspěšnou zprávu
+      alert('🎉 Rezervace byla úspěšně odeslána!\n\nBrzy vás budeme kontaktovat pro potvrzení a platební informace.\n\nDěkujeme za váš zájem!');
+      
+      // Přesměrujeme na hlavní stránku
+      navigate('home');
+      
+    } catch (error) {
+      console.error('Chyba při ukládání rezervace:', error);
+      alert('❌ Nastala chyba při odesílání rezervace.\n\nZkuste to prosím znovu nebo nás kontaktujte telefonicky.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTermsAccept = () => {
@@ -400,10 +449,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
                     setStep(step + 1);
                   }
                 }}
-                disabled={!isStepValid(step)}
+                disabled={!isStepValid(step) || isSubmitting}
                 className="bg-gray-900 hover:bg-gray-800 px-6"
               >
-                {step === 3 ? 'Odeslat rezervaci' : 'Pokračovat →'}
+                {step === 3 ? 
+                  (isSubmitting ? 'Odesílání...' : 'Odeslat rezervaci') : 
+                  'Pokračovat →'
+                }
               </Button>
             </div>
           </div>
