@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: hsl(214.3 31.8% 91.4%);
+  }
+  
+  body {
+    background-color: hsl(0 0% 100%);
+    color: hsl(222.2 84% 4.9%);
+    font-family: Inter, system-ui, sans-serif;
+  }
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  
+  p {
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+}
