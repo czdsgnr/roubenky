@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '../firebase/firebase.config';
 import AdminLogin from './AdminLogin';
-import AdminPanel from './AdminPanel';
+import AdminPanelSimple from './AdminPanelSimple';
 
 const AdminApp: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -45,7 +45,7 @@ const AdminApp: React.FC = () => {
     return <AdminLogin onLoginSuccess={handleLoginSuccess} />;
   }
 
-  return <AdminPanel user={user} onLogout={handleLogout} />;
+  return <AdminPanelSimple user={user} onLogout={handleLogout} />;
 };
 
 export default AdminApp;

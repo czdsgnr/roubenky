@@ -9,10 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Alert, AlertDescription } from '../ui/alert';
 import Header from '../shared/Header';
 import AvailabilityCalendar from './AvailabilityCalendar';
+import ReservationFormNew from '../ReservationFormNew';
 
-// Firebase imports
+// Firebase imports - PŘIDÁNO
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase/firebase.config';
+import { db } from '../../firebase/firebase.config';
 
 interface BookingPageProps {
   navigate: (page: string) => void;
@@ -22,7 +23,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
   const [step, setStep] = useState(1);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // PŘIDÁNO
+  const [showReservationForm, setShowReservationForm] = useState(false);
   const [bookingData, setBookingData] = useState({
     checkIn: '',
     checkOut: '',
@@ -73,6 +75,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
     }
   };
 
+  // FIREBASE INTEGRACE - NAHRAZENO
   const handleSubmit = async () => {
     if (!termsAccepted) {
       setShowTermsModal(true);
@@ -114,14 +117,14 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
       console.log('Rezervace uložena s ID:', docRef.id);
       
       // Zobrazíme úspěšnou zprávu
-      alert('🎉 Rezervace byla úspěšně odeslána!\n\nBrzy vás budeme kontaktovat pro potvrzení a platební informace.\n\nDěkujeme za váš zájem!');
+      alert('🎉 Rezervace byla úspěšně odeslána!\n\nBrzy vás budeme kontaktovat pro potvrzení a platební informace.\n\nDěkujeme za váš zájem o Králickou Roubenku!');
       
       // Přesměrujeme na hlavní stránku
       navigate('home');
       
     } catch (error) {
       console.error('Chyba při ukládání rezervace:', error);
-      alert('❌ Nastala chyba při odesílání rezervace.\n\nZkuste to prosím znovu nebo nás kontaktujte telefonicky.');
+      alert('❌ Nastala chyba při odesílání rezervace.\n\nZkuste to prosím znovu nebo nás kontaktujte telefonicky na +420 123 456 789.');
     } finally {
       setIsSubmitting(false);
     }
@@ -450,13 +453,35 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
                   }
                 }}
                 disabled={!isStepValid(step) || isSubmitting}
-                className="bg-gray-900 hover:bg-gray-800 px-6"
+                className="bg-gray-900 hover:bg-gray-800 px-6 flex items-center gap-2"
               >
-                {step === 3 ? 
-                  (isSubmitting ? 'Odesílání...' : 'Odeslat rezervaci') : 
+                {step === 3 ? (
+                  isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Odesílám...
+                    </>
+                  ) : (
+                    'Odeslat rezervaci'
+                  )
+                ) : (
                   'Pokračovat →'
-                }
+                )}
               </Button>
+            </div>
+          </div>
+
+          {/* Quick Reservation Button */}
+          <div className="lg:col-span-2 mt-8">
+            <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-xl p-6 text-center">
+              <h3 className="text-xl font-medium text-gray-800 mb-2">Rychlá rezervace</h3>
+              <p className="text-gray-600 mb-4">Máte vybraný termín? Použijte náš nový rezervační formulář</p>
+              <button
+                onClick={() => setShowReservationForm(true)}
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Otevřít rezervační formulář
+              </button>
             </div>
           </div>
 
@@ -588,6 +613,25 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
                     <li>• Doplatek je splatný při příjezdu</li>
                   </ul>
                 </section>
+
+                <section>
+                  <h3 className="font-medium text-lg mb-3">4. Storno podmínky</h3>
+                  <ul className="space-y-2 text-gray-700">
+                    <li>• Storno do 30 dnů před příjezdem - vrácení plné zálohy</li>
+                    <li>• Storno do 14 dnů před příjezdem - vrácení 50% zálohy</li>
+                    <li>• Storno do 7 dnů před příjezdem - záloha se nevrací</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="font-medium text-lg mb-3">5. Pravidla pobytu</h3>
+                  <ul className="space-y-2 text-gray-700">
+                    <li>• Noční klid od 22:00 do 8:00</li>
+                    <li>• Respektování sousedů a okolního prostředí</li>
+                    <li>• Při odchodu nechte objekt v původním stavu</li>
+                    <li>• Za způsobené škody odpovídá osoba, která rezervaci provedla</li>
+                  </ul>
+                </section>
               </div>
             </div>
             
@@ -595,7 +639,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
               <div className="flex items-center gap-4 mb-4">
                 <Shield className="w-5 h-5 text-green-600" />
                 <span className="text-sm text-gray-700">
-                  Přečetl/a jsem si ubytovací řád a souhlasím s podmínkami pobytu
+                  Přečetl/a jsem si ubytovací řád a souhlasím s podmínkami pobytu v Králické Roubence
                 </span>
               </div>
               <div className="flex gap-3 justify-end">
@@ -608,13 +652,38 @@ const BookingPage: React.FC<BookingPageProps> = ({ navigate }) => {
                 <Button
                   onClick={handleTermsAccept}
                   className="bg-gray-900 hover:bg-gray-800"
+                  disabled={isSubmitting}
                 >
-                  Souhlasím a odeslat rezervaci
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Odesílám...
+                    </>
+                  ) : (
+                    'Souhlasím a odeslat rezervaci'
+                  )}
                 </Button>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* New Reservation Form */}
+      {showReservationForm && (
+        <ReservationFormNew
+          onClose={() => setShowReservationForm(false)}
+          onSuccess={() => {
+            setShowReservationForm(false);
+            alert('🎉 Rezervace byla úspěšně odeslána!\n\nBrzy vás budeme kontaktovat pro potvrzení a platební informace.\n\nDěkujeme za váš zájem o Králickou Roubenku!');
+            navigate('home');
+          }}
+          prefilledData={{
+            checkIn: bookingData.checkIn,
+            checkOut: bookingData.checkOut,
+            guests: parseInt(bookingData.guests) || 2
+          }}
+        />
       )}
     </div>
   );

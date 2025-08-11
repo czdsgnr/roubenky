@@ -9,6 +9,7 @@ import RecenzePage from './components/pages/RecenzePage';
 import KontaktPage from './components/pages/KontaktPage';
 import BookingPage from './components/pages/BookingPage';
 import AdminApp from './components/AdminApp';
+import InitializeApp from './components/InitializeApp';
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -43,7 +44,11 @@ const App = () => {
     }
   };
 
-  return <div className="min-h-screen">{renderPage()}</div>;
+  return (
+    <InitializeApp>
+      <div className="min-h-screen">{renderPage()}</div>
+    </InitializeApp>
+  );
 };
 
 export default App;

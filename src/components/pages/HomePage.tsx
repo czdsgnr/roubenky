@@ -21,6 +21,7 @@ import { ImageWithFallback } from '../utils/ImageWithFallback';
 import HomeNavigation from '../shared/HomeNavigation';
 import FAQSection from "./FAQSection";
 import ContactMapSection from "./ContactMapSection";
+import { useContentSection } from '../../hooks/useWebsiteContent';
 
 interface HomePageProps {
   navigate: (page: string) => void;
@@ -28,19 +29,79 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
   const [activeImage, setActiveImage] = useState(0);
+  const { content: homepageContent, loading } = useContentSection('homepage');
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveImage((prev) => (prev + 1) % 3);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    if (homepageContent?.hero?.images?.length) {
+      const interval = setInterval(() => {
+        setActiveImage((prev) => (prev + 1) % homepageContent.hero.images.length);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [homepageContent?.hero?.images?.length]);
 
-  const heroImages = [
-    "https://www.kralickaroubenka.cz/sites/kralickaroubenka/files/styles/banner/public/obrazky/banner/whatsappimage2021-11-28at2053242.jpeg?itok=0VJcVO79",
-    "https://www.kralickaroubenka.cz/sites/kralickaroubenka/files/styles/banner/public/obrazky/banner/img0023.jpg?itok=Cs9tn_jl",
-    "https://images.unsplash.com/photo-1520637836862-4d197d17c11a?q=80&w=2069&auto=format&fit=crop",
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Načítání...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!homepageContent) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center relative">
+        <div className="text-center max-w-md">
+          <div className="text-red-600 text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Chyba při načítání obsahu</h1>
+          <p className="text-gray-600 mb-6">
+            Databáze ještě neobsahuje potřebná data. Klikněte na tlačítko níže pro inicializaci.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={async () => {
+                try {
+                  const { initializeWebsiteContent } = await import('../../firebase/initializeContent');
+                  const success = await initializeWebsiteContent();
+                  if (success) {
+                    window.location.reload();
+                  } else {
+                    alert('Chyba při inicializaci. Zkuste to znovu.');
+                  }
+                } catch (error) {
+                  console.error('Chyba při importu:', error);
+                  alert('Chyba při načítání inicializačního modulu.');
+                }
+              }}
+              className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Inicializovat databázi
+            </button>
+            <button
+              onClick={() => navigate('admin')}
+              className="block w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Přejít do Admin panelu
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="block w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Obnovit stránku
+            </button>
+            <p className="text-xs text-gray-500 mt-4">
+              Admin panel automaticky inicializuje databázi při prvním přihlášení.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const heroImages = homepageContent?.hero?.images || [];
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -78,16 +139,11 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-thin leading-tight mb-6 text-white">
-            Luxusní soukromé wellness
-            <span className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-light">
-              v srdci hor
-            </span>
+            {homepageContent?.hero?.title || "Luxusní soukromé wellness v srdci hor"}
           </h1>
 
           <p className="text-lg sm:text-xl font-light text-white/90 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Exkluzivní ubytování pro 14 hostů s privátním
-            wellness centrem a celoročně vyhřívaným bazénem v
-            srdci Krkonoš
+            {homepageContent?.hero?.description || "Exkluzivní ubytování pro 14 hostů s privátním wellness centrem a celoročně vyhřívaným bazénem v srdci Krkonoš"}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -139,6 +195,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
             />
           ))}
         </div>
+
       </section>
 
       {/* Představení */}
@@ -149,66 +206,48 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-600 mb-6">
                 <Sparkles className="w-4 h-4" />
                 <span className="font-light tracking-wide">
-                  LUXUSNÍ UBYTOVÁNÍ
+                  {homepageContent?.about?.badge || "LUXUSNÍ UBYTOVÁNÍ"}
                 </span>
               </div>
 
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-thin mb-6 lg:mb-8">
-                Dokonalé spojení
+                {homepageContent?.about?.title || "Dokonalé spojení"}
                 <span className="block font-light">
-                  tradice a luxusu
+                  {homepageContent?.about?.subtitle || "tradice a luxusu"}
                 </span>
               </h2>
               <p className="text-lg font-light text-gray-600 mb-8 lg:mb-12 leading-relaxed">
-                Autentická horská roubenka v srdci přírody
-                Králického Sněžníku nabízí jedinečnou kombinaci
-                tradičního designu s nejmodernějším vybavením a
-                službami na úrovni pětihvězdičkového hotelu.
+                {homepageContent?.about?.description || "Autentická horská roubenka v srdci přírody Králického Sněžníku nabízí jedinečnou kombinaci tradičního designu s nejmodernějším vybavením a službami na úrovni pětihvězdičkového hotelu."}
               </p>
 
               <div className="grid grid-cols-2 gap-4 lg:gap-6 mb-8">
-                {[
-                  {
-                    number: "14",
-                    label: "Luxusních míst",
-                    sublabel: "ve 4 apartmánech",
-                    icon: Users,
-                  },
-                  {
-                    number: "500",
-                    label: "Metrů od sjezdovky",
-                    sublabel: "ski in/ski out",
-                    icon: Mountain,
-                  },
-                  {
-                    number: "24/7",
-                    label: "Concierge servis",
-                    sublabel: "vždy k dispozici",
-                    icon: Clock,
-                  },
-                  {
-                    number: "100%",
-                    label: "Soukromí",
-                    sublabel: "celý objekt jen pro vás",
-                    icon: Shield,
-                  },
-                ].map((stat, i) => (
-                  <div
-                    key={i}
-                    className="group text-center p-4 lg:p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-300 hover:shadow-md"
-                  >
-                    <stat.icon className="w-8 h-8 mx-auto mb-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                    <div className="text-3xl lg:text-4xl font-thin mb-2 text-gray-900">
-                      {stat.number}
+                {(homepageContent?.about?.stats || []).map((stat, i) => {
+                  const iconMap: { [key: string]: any } = {
+                    'Users': Users,
+                    'Mountain': Mountain,
+                    'Clock': Clock,
+                    'Shield': Shield
+                  };
+                  const IconComponent = iconMap[Object.keys(iconMap)[i]] || Users;
+                  
+                  return (
+                    <div
+                      key={i}
+                      className="group text-center p-4 lg:p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-300 hover:shadow-md"
+                    >
+                      <IconComponent className="w-8 h-8 mx-auto mb-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                      <div className="text-3xl lg:text-4xl font-thin mb-2 text-gray-900">
+                        {stat.number}
+                      </div>
+                      <div className="text-sm font-light text-gray-900">
+                        {stat.label}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {stat.sublabel}
+                      </div>
                     </div>
-                    <div className="text-sm font-light text-gray-900">
-                      {stat.label}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {stat.sublabel}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <button
@@ -223,7 +262,7 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
             <div className="order-1 lg:order-2 relative">
               <div className="aspect-square relative overflow-hidden rounded-2xl shadow-2xl">
                 <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2070&auto=format&fit=crop"
+                  src={homepageContent?.about?.image || "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2070&auto=format&fit=crop"}
                   alt="Luxusní interiér roubenky"
                   className="w-full h-full object-cover"
                 />
@@ -277,68 +316,31 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 lg:mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-thin mb-4">
-              Objevte naši roubenku
+              {homepageContent?.features?.title || "Objevte naši roubenku"}
             </h2>
             <p className="text-lg text-gray-600 font-light">
-              Vše, co potřebujete pro dokonalý pobyt
+              {homepageContent?.features?.subtitle || "Vše, co potřebujete pro dokonalý pobyt"}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Wellness & Spa",
-                description:
-                  "Privátní wellness centrum s bazénem, saunou a vířivkou",
-                image:
-                  "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?q=80&w=800&auto=format&fit=crop",
-                action: () => navigate("about"),
-              },
-              {
-                title: "Hynčice a okolí",
-                description:
-                  "Aktivity po celý rok - lyžování, turistika, cyklistika",
-                image:
-                  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=800&auto=format&fit=crop",
-                action: () => navigate("aktivity"),
-              },
-              {
-                title: "Fotogalerie",
-                description:
-                  "Prohlédněte si luxusní interiéry a krásné prostředí",
-                image:
-                  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop",
-                action: () => navigate("gallery"),
-              },
-              {
-                title: "Transparentní ceník",
-                description:
-                  "Jasné ceny včetně všech poplatků a energií",
-                image:
-                  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=800&auto=format&fit=crop",
-                action: () => navigate("cenik"),
-              },
-              {
-                title: "Recenze hostů",
-                description:
-                  "Přečtěte si hodnocení našich spokojených hostů",
-                image:
-                  "https://images.unsplash.com/photo-1559827260-dc66d52bef19?q=80&w=800&auto=format&fit=crop",
-                action: () => navigate("recenze"),
-              },
-              {
-                title: "Kontakt & Rezervace",
-                description:
-                  "Jsme tu pro vás 24/7. Rezervujte si svůj pobyt",
-                image:
-                  "https://images.unsplash.com/photo-1496171367470-9ed9a91ea931?q=80&w=800&auto=format&fit=crop",
-                action: () => navigate("kontakt"),
-              },
-            ].map((card, i) => (
+            {(homepageContent?.features?.cards || []).map((card, i) => (
               <div
                 key={i}
                 className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-2 cursor-pointer"
-                onClick={card.action}
+                onClick={() => {
+                  // Mapování názvů na stránky
+                  const pageMap: { [key: string]: string } = {
+                    'Wellness & Spa': 'about',
+                    'Hynčice a okolí': 'aktivity',
+                    'Fotogalerie': 'gallery',
+                    'Transparentní ceník': 'cenik',
+                    'Recenze hostů': 'recenze',
+                    'Kontakt & Rezervace': 'kontakt'
+                  };
+                  const page = pageMap[card.title] || 'about';
+                  navigate(page);
+                }}
               >
                 <div className="aspect-video relative overflow-hidden">
                   <ImageWithFallback
@@ -369,11 +371,11 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-600 mb-6">
               <Star className="w-4 h-4" />
               <span className="font-light tracking-wide">
-                RECENZE HOSTŮ
+                {homepageContent?.reviews?.badge || "RECENZE HOSTŮ"}
               </span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-thin mb-6">
-              Hodnocení od hostů
+              {homepageContent?.reviews?.title || "Hodnocení od hostů"}
             </h2>
             
             {/* Rating Display */}
@@ -383,8 +385,8 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
                   <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
-              <span className="text-2xl font-light ml-2">4.9</span>
-              <span className="text-gray-600 font-light">z 1277 recenzí</span>
+              <span className="text-2xl font-light ml-2">{homepageContent?.reviews?.rating || 4.9}</span>
+              <span className="text-gray-600 font-light">z {homepageContent?.reviews?.totalReviews || 127} recenzí</span>
             </div>
           </div>
 
@@ -398,19 +400,19 @@ const HomePage: React.FC<HomePageProps> = ({ navigate }) => {
               </div>
               
               <blockquote className="text-lg lg:text-xl font-light text-gray-700 leading-relaxed text-center mb-8 italic">
-                "Králická roubenka je úžasné místo pro ubytování přímo pod Králickým Sněžníkem. Už samotná stavba nás nadchla – krásný kombinet, perfektně čistá a nadstandardně vybavená. Všechno bylo připraveno do posledního detailu. Velice příjemným zážitkem, po dlouhém výletě, pro nás byl především vyhřívaný sud na zahradě a krásně zařízená sauna s výhledem na okolní přírodu. Ale celé okolí roubenky je úžasné – také zahrada s posezením, dětskou houpačkou a grilem nabízí spoustu možností k odpočinku a relaxaci."
+                "{homepageContent?.reviews?.featuredReview?.text || "Králická roubenka je úžasné místo pro ubytování přímo pod Králickým Sněžníkem. Už samotná stavba nás nadchla – krásný kombinet, perfektně čistá a nadstandardně vybavená."}"
               </blockquote>
               
               <div className="flex items-center justify-center gap-4">
                 <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-light">
-                  KM
+                  {homepageContent?.reviews?.featuredReview?.author?.split(' ').map(n => n[0]).join('') || "KM"}
                 </div>
                 <div className="text-center">
-                  <div className="font-light text-gray-900">Klára Matoušková</div>
-                  <div className="text-sm text-gray-500">16. října 2024</div>
+                  <div className="font-light text-gray-900">{homepageContent?.reviews?.featuredReview?.author || "Klára Matoušková"}</div>
+                  <div className="text-sm text-gray-500">{homepageContent?.reviews?.featuredReview?.date || "16. října 2024"}</div>
                   <div className="flex items-center gap-1 mt-1 justify-center">
                     <div className="w-4 h-4 text-blue-600">G</div>
-                    <span className="text-xs text-gray-500">Google recenze</span>
+                    <span className="text-xs text-gray-500">{homepageContent?.reviews?.featuredReview?.source || "Google recenze"}</span>
                   </div>
                 </div>
               </div>
